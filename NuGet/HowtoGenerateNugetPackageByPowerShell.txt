@@ -1,0 +1,3 @@
+1. Update `PackageName.nuspec` contents
+2. Run the below command
+ nuget pack PackageName.nuspec
