@@ -8,6 +8,7 @@ Add-Type -Path $path
 
 # If get Octopus Client Library Error message
 * Add the below line to the first line of the PowerShell script
+
 `Add-Type -Path 'C:\PathTo\Octopus.Client.dll'`
 
 # Reference
