@@ -1,0 +1,54 @@
+prefix="db_"
+old1="494B4E0D-AC63-4EA3-8794-2AB9F50703E8"
+old2="D8DCF2DC-70C6-4FA7-AE8B-5A26B91AED4B"
+old3="EDA1C21B-88E7-455E-9744-287B7AA5782B"
+new="C552199C-F6B1-44DC-8157-5F795FD100F4"
+
+
+function copy_and_update_index {
+  # copy from old index servers 
+  scp -rp splunk@licwpdskip01:/opt/splunk/var/lib/splunk/monitordb_a/db/db_* .
+  scp -rp splunk@licwpdskip02:/opt/splunk/var/lib/splunk/monitordb_a/db/db_* .
+  scp -rp splunk@licrrwskip03:/opt/splunk/var/lib/splunk/monitordb_a/db/db_* .
+
+  # print all DB files
+  find . -name "db_*" | while read FILE ; do
+    echo $FILE
+  done 
+
+  # change indexr 1 GUID to new GUID
+  find . -name "db_*" | while read FILE ; do
+    newfile="$(echo ${FILE} |sed -e 's/'"$old1"'/'"$new"'/g')" ;
+    mv "${FILE}" "${newfile}" ;
+  done 
+  # change indexr 2 GUID to new GUID
+  find . -name "db_*"| while read FILE ; do
+    newfile="$(echo ${FILE} |sed -e 's/'"$old2"'/'"$new"'/g')" ;
+    mv "${FILE}" "${newfile}" ;
+  done 
+  # change indexr 3 GUID to new GUID
+  find . -name "db_*" | while read FILE ; do
+    newfile="$(echo ${FILE} |sed -e 's/'"$old3"'/'"$new"'/g')" ;
+    mv "${FILE}" "${newfile}" ;
+  done 
+
+  # reorder bucket numbers
+  i=1
+  find . -name "db_*" | while read FILE ; do
+	newname=$(echo $FILE | sed 's/'"$prefix"'\(.*\)_\(.*\)_\(.*\)_'"$new"'/db_\1_\2_'"$i"'_'"$new"'/')
+	echo $FILE
+	mv $FILE $newname
+	((i=i+1))
+  done 
+}
+
+# Index list that will copy
+indexes=("webiis" "webapi" "website" "service" "monitor" "os" "perfmon" "plugins" "lic_audit" "_internal" "_audit")
+
+for index in ${indexes[@]}; do
+  echo $index
+  # mkdir $index
+  cd $index
+  copy_and_update_index
+  cd ..
+done
