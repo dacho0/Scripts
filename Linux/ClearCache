@@ -1,0 +1,5 @@
+# https://www.tecmint.com/clear-ram-memory-cache-buffer-and-swap-space-on-linux/
+
+cat /proc/meminfo | grep Free
+echo 3 > /proc/sys/vm/drop_caches
+cat /proc/meminfo | grep Free
