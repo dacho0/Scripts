@@ -1,0 +1,67 @@
+# Open  DB2 Command Windows  (can find it start / apps / IBM DB2 DB2COPY1 (Default) )
+# Powershell: Set-Item -Path Env:DB2CLP -Value ("DB20FADE")
+# OR
+# cmd "C:\Program Files\IBM\SQLLIB\BIN\DB2CW.BAT"
+
+db2 list db DIRECTORY
+db2 UNCATALOG DATABASE TLICTP 
+db2 UNCATALOG node TNODE 
+db2 catalog tcpip node TNODE remote %SERVER_ADDRESS% server 50000
+db2 catalog database LICTP as TLICTP at node ANODE
+db2 connect to ALICTP user %USER_NAME% using %USER_PASSWORD%
+db2 select count('ANML_KEY') from tp.AB_BULL
+
+# Acceptance DB2 Server
+db2 list db DIRECTORY
+db2 UNCATALOG DATABASE ALICTP 
+db2 UNCATALOG node ANODE 
+db2 catalog tcpip node ANODE remote %SERVER_ADDRESS% server 50000
+db2 catalog database LICTP as ALICTP at node ANODE
+db2 connect to ALICTP user %USER_NAME% using %USER_PASSWORD%
+db2 select count('ANML_KEY') from tp.AB_BULL
+
+# Prod DB2 Server
+db2 list db DIRECTORY
+db2 UNCATALOG DATABASE PLICTP 
+db2 UNCATALOG node PNODE 
+db2 catalog tcpip node PNODE remote %SERVER_ADDRESS% server 50000
+db2 catalog database LICTP as PLICTP at node PNODE
+db2 connect to PLICTP user %USER_NAME% using %USER_PASSWORD%
+db2 select count('ANML_KEY') from tp.AB_BULL
+
+# Workaround
+db2cmd -i -w db2clpsetcp
+echo %DB2CLP%
+DB20FADE
+SET DB2CLP=DB20FADE
+
+# using ODBC
+# Add node and database 
+# Should run on `DB2 Command Window`
+db2 catalog tcpip node ACON04 remote %SERVER_ADDRESS% server 50000
+db2 catalog database LICTP as LICTP at node ACON04
+
+## Adding ODBC
+Add-OdbcDsn -Name "ACON04" -DriverName "IBM DB2 ODBC DRIVER" -DsnType "User" -Platform "64-bit" -SetPropertyValue @("Database=LICTP", "DbAlias=ACON04")
+get-odbcdsn
+
+
+## Send a Query by ODBC
+$conn = new-object system.data.odbc.odbcconnection
+$conn.connectionstring = ""
+$conn.ConnectionString = "DSN=ACON04;Server=ACON04;Database=LICTP;Uid=%USER_NAME%;Pwd=%USER_PASSWORD%;"
+$query="select count(ANML_KEY) from tp.AB_BULL"
+$cmd = New-object System.Data.Odbc.OdbcCommand($query,$conn)
+$ds = New-Object system.Data.DataSet
+(New-Object system.Data.odbc.odbcDataAdapter($cmd)).fill($ds) | out-null
+$conn.close()
+$ds.Tables[0]
+
+## Remove ODBC
+Remove-OdbcDsn -Name "ACON04" -DsnType "User"   -Platform "64-bit"
+get-odbcdsn
+
+
+# IBM DB2 client on Windows Server Core
+# https://www.reddit.com/r/docker/comments/kgqse2/ibm_db2_client_on_windows_server_core/
+# https://www.ibm.com/mysupport/s/question/0D53p00008JQ5m5/ibm-data-server-client-inside-windows-server-core-docker-container?language=en_US
